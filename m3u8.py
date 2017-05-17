@@ -1,13 +1,17 @@
-#coding: utf-8
+# -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import unicode_literals
 
 from gevent import monkey
 monkey.patch_all()
 from gevent.pool import Pool
 import gevent
 import requests
-import urlparse
+import urllib.parse
+import urllib.request
 import os
 import time
+
 
 class Downloader:
     def __init__(self, pool_size, retry=3):
@@ -33,18 +37,33 @@ class Downloader:
 
         r = self.session.get(m3u8_url, timeout=10)
         if r.ok:
-            body = r.content
+            body = r.content.decode("utf-8")
             if body:
-                ts_list = [urlparse.urljoin(m3u8_url, n.strip()) for n in body.split('\n') if n and not n.startswith("#")]
-                ts_list = zip(ts_list, [n for n in xrange(len(ts_list))])
+                ts_list = [urllib.parse.urljoin(m3u8_url, n.strip()) for n in body.split('\n') if n and not n.startswith("#")]
+                print(ts_list)
+                # ts_list = zip(ts_list, [n for n in range(len(ts_list))])
                 if ts_list:
-                    self.ts_total = len(ts_list)
-                    print self.ts_total
-                    g1 = gevent.spawn(self._join_file)
-                    self._download(ts_list)
-                    g1.join()
+                    # self.ts_total = len(ts_list)
+                    # print(self.ts_total)
+                    # g1 = gevent.spawn(self._join_file)
+                    # self._download(ts_list)
+                    # g1.join()
+                    for k in ts_list:
+                        self.download(k, self.dir)
         else:
-            print r.status_code
+            print(r.status_code)
+
+    def download(self, url, path):
+        base_url, origin_name = os.path.split(url)
+        print(base_url, origin_name)
+        save_path = os.path.join(path, origin_name)
+        response = urllib.request.urlretrieve(url=url)
+        contents = open(response[0], "br").read()
+
+        # save path
+        f = open(save_path, "wb")
+        f.write(contents)
+        f.close()
 
     def _download(self, ts_list):
         self.pool.map(self._worker, ts_list)
@@ -62,14 +81,14 @@ class Downloader:
                 r = self.session.get(url, timeout=20)
                 if r.ok:
                     file_name = url.split('/')[-1]
-                    print file_name
+                    print(file_name)
                     with open(os.path.join(self.dir, file_name), 'wb') as f:
                         f.write(r.content)
                     self.succed[index] = file_name
                     return
             except:
                 retry -= 1
-        print '[FAIL]%s' % url
+        # print('[FAIL]%s' % url)
         self.failed.append((url, index))
 
     def _join_file(self):
@@ -92,4 +111,4 @@ class Downloader:
 
 if __name__ == '__main__':
     downloader = Downloader(50)
-    downloader.run('http://m3u8.test.com/test.m3u8', '/home/video/')
+    downloader.run('http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear1/prog_index.m3u8', '/home/wuminlai/Work/media/offset_hls/bipbop_4x3/gear1')
