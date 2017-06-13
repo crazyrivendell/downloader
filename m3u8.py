@@ -2,9 +2,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from gevent import monkey
-monkey.patch_all()
-from gevent.pool import Pool
 import requests
 import urllib.parse
 import urllib.request
@@ -72,6 +69,8 @@ class Parser:
                 self.download(k["uri"])
                 self.download(k["thumbnail"])
                 self.download(k["download_uri"])
+
+            print("end")
         else:
             print("http error %d" % response.status_code)
 
@@ -79,7 +78,7 @@ class Parser:
         ext = os.path.splitext(http_link)[1]
         if ext == ".m3u8":
             session = requests.Session()
-            adapter = requests.adapters.HTTPAdapter(pool_connections=50, pool_maxsize=50,max_retries=3)
+            adapter = requests.adapters.HTTPAdapter(pool_connections=50, pool_maxsize=50, max_retries=3)
             session.mount('http://', adapter)
             session.mount('https://', adapter)
             r = session.get(http_link, timeout=10)
@@ -99,11 +98,8 @@ class Parser:
             self._download(http_link, self.dir)
 
     def _download(self, http_link, dst):
-        print(http_link, dst)
-        base_url, origin_name = os.path.split(http_link)
-        print(base_url, origin_name)
+        origin_name = os.path.split(http_link)[1]
         save_path = os.path.join(dst, origin_name)
-        print(save_path)
         response = urllib.request.urlretrieve(url=http_link)
         contents = open(response[0], "br").read()
 
