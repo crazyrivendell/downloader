@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import requests
 import urllib.parse
 import urllib.request
-import os, json
+import os,json,shutil
 import time
 
 
@@ -69,7 +69,8 @@ class Parser:
                 self.download(k["uri"])
                 self.download(k["thumbnail"])
                 self.download(k["download_uri"])
-
+            if os.path.exists(self.dir):
+                shutil.rmtree(self.dir)  # delete local files
             print("end")
         else:
             print("http error %d" % response.status_code)
