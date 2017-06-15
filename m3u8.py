@@ -114,8 +114,8 @@ class Parser:
             with open(save_path, 'wb') as f:
                 f.write(contents)
                 f.close()
-        except urllib.ContentTooShortError:
-            print('Network conditions is not good.Reloading.')
+        except Exception as e:
+            print('Network(%s) conditions is not good.Reloading.' % str(e))
             self._download(http_link, dst)
 
 
