@@ -75,9 +75,9 @@ class Parser:
                 for k in playlist["photos"]:
                     self.download(k["uri"])
                     self.download(k["thumbnail"])
-            if os.path.exists(self.dir):
-                shutil.rmtree(self.dir)  # delete local files
-            print("end")
+            # if os.path.exists(self.dir):
+            #     shutil.rmtree(self.dir)  # delete local files
+            # print("end")
         else:
             print("http error %d" % response.status_code)
 
