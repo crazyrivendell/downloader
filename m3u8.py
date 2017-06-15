@@ -59,16 +59,22 @@ class Parser:
         if self.dir and not os.path.isdir(self.dir):
             os.makedirs(self.dir)
 
-    def prase(self, http_url):
+    def prase(self, http_url, type):
         response = requests.get(url=http_url, verify=False)
         if response.status_code == 200:
             jsondata = json.loads(response.content.decode('utf-8'))
 
-            playlist = jsondata["playlist"]
-            for k in playlist["videos"]:
-                self.download(k["uri"])
-                self.download(k["thumbnail"])
-                self.download(k["download_uri"])
+            if type == "VIDEO":
+                playlist = jsondata["playlist"]
+                for k in playlist["videos"]:
+                    self.download(k["uri"])
+                    self.download(k["thumbnail"])
+                    self.download(k["download_uri"])
+            elif type == "PHOTO":
+                playlist = jsondata["album"]
+                for k in playlist["photos"]:
+                    self.download(k["uri"])
+                    self.download(k["thumbnail"])
             if os.path.exists(self.dir):
                 shutil.rmtree(self.dir)  # delete local files
             print("end")
@@ -99,6 +105,7 @@ class Parser:
             self._download(http_link, self.dir)
 
     def _download(self, http_link, dst):
+        print(http_link)
         origin_name = os.path.split(http_link)[1]
         save_path = os.path.join(dst, origin_name)
         response = urllib.request.urlretrieve(url=http_link)
@@ -112,6 +119,7 @@ class Parser:
 
 if __name__ == '__main__':
     parse = Parser()
-    parse.prase("https://api.kandaovr.com/video/v1/playlist?codec=4&container=H&language=ZH-CN&name=KANDAO_APP_MAIN&page_count=4&page_num=0&vbr=8&warping=C")
+    parse.prase(http_url="https://api.kandaovr.com/video/v1/playlist?codec=4&container=H&language=ZH-CN&name=KANDAO_APP_MAIN&vbr=8&warping=C", type="VIDEO")
+    parse.prase(http_url="https://api.kandaovr.com/photo/v1/album?language=EN-US&name=KANDAO_APP_MAIN", type="PHOTO")
     #downloader = Downloader(50)
     #downloader.run('http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_16x9/gear5/prog_index.m3u8', '/home/wuminlai/Work/media/offset_hls/bipbop_16x9/gear5')
