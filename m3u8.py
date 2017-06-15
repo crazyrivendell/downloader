@@ -5,13 +5,14 @@ from __future__ import unicode_literals
 import requests
 import urllib.parse
 import urllib.request
-from urllib.parse import urlparse
 import os,json,shutil
 import time
 
+DIR = 'tmp'
+RETRY = 3
 
 class Downloader:
-    def __init__(self, pool_size, retry=3):
+    def __init__(self, pool_size, retry=RETRY):
         self.session = self._get_http_session(pool_size, pool_size, retry)
         self.retry = retry
         self.dir = ''
@@ -55,10 +56,10 @@ class Downloader:
 
 
 class Parser:
-    def __init__(self, dir='tmp'):
+    def __init__(self, dir=DIR):
         self.dir = dir
-        self.retry = 1
-        if self.dir and not os.path.isdir(self.dir):
+        self.retry = 0
+        if self.dir and not os.path.exists(self.dir):
             os.makedirs(self.dir)
 
     def prase(self, http_url, type):
@@ -85,11 +86,21 @@ class Parser:
             self.prase(http_url, type)
 
     def download(self, http_link):
-        self.retry = 1
-        ext = os.path.splitext(http_link)[1]
+        self.retry = 0
+        self.dir = DIR
+
+        path = urllib.parse.urlparse(http_link).path[1:]
+        _dir = os.path.split(path)[0]
+        name, ext = os.path.splitext(path)
+        self.dir = os.path.join(self.dir, _dir)
+        print(self.dir)
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
         if ext == ".m3u8":
+            self._download(http_link, self.dir)
+
             session = requests.Session()
-            adapter = requests.adapters.HTTPAdapter(pool_connections=50, pool_maxsize=50, max_retries=3)
+            adapter = requests.adapters.HTTPAdapter(pool_connections=50, pool_maxsize=50, max_retries=RETRY)
             session.mount('http://', adapter)
             session.mount('https://', adapter)
             r = session.get(http_link, timeout=10)
@@ -107,27 +118,26 @@ class Parser:
             self._download(http_link, self.dir)
 
     def _download(self, http_link, dst):
-        print(http_link)
         origin_name = os.path.split(http_link)[1]
         save_path = os.path.join(dst, origin_name)
+        print(http_link, save_path)
         if os.path.exists(save_path):
             print(save_path + " exist.")
             return
         try:
-            _http_link = urllib.parse.quote(http_link, safe=':/')
+            _http_link = urllib.parse.quote(http_link, safe=':/')  # parse link to url
             response = urllib.request.urlretrieve(url=_http_link)
             contents = open(response[0], "br").read()
-
             with open(save_path, 'wb') as f:
                 f.write(contents)
                 f.close()
         except Exception as e:
             print('Network(%s) conditions is not good.Reloading.' % str(e))
-            if self.retry < 4:
+            if self.retry < RETRY:
                 self.retry += 1
                 if os.path.exists(save_path):
                     os.remove(save_path)
-                self._download(http_link, dst)
+                self._download(http_link, save_path)
             else:
                 print("Retry %d times faild" % self.retry)
                 return
