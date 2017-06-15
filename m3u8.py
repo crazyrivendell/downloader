@@ -113,10 +113,7 @@ class Parser:
             contents = open(response[0], "br").read()
             with open(save_path, 'wb') as f:
                 f.write(contents)
-            # save path
-            f = open(save_path, "wb")
-            f.write(contents)
-            f.close()
+                f.close()
         except urllib.ContentTooShortError:
             print('Network conditions is not good.Reloading.')
             self._download(http_link, dst)
