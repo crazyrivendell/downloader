@@ -108,13 +108,18 @@ class Parser:
         print(http_link)
         origin_name = os.path.split(http_link)[1]
         save_path = os.path.join(dst, origin_name)
-        response = urllib.request.urlretrieve(url=http_link)
-        contents = open(response[0], "br").read()
-
-        # save path
-        f = open(save_path, "wb")
-        f.write(contents)
-        f.close()
+        try:
+            response = urllib.request.urlretrieve(url=http_link)
+            contents = open(response[0], "br").read()
+            with open(save_path, 'wb') as f:
+                f.write(contents)
+            # save path
+            f = open(save_path, "wb")
+            f.write(contents)
+            f.close()
+        except urllib.ContentTooShortError:
+            print('Network conditions is not good.Reloading.')
+            self._download(http_link, dst)
 
 
 if __name__ == '__main__':
