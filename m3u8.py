@@ -56,6 +56,7 @@ class Downloader:
 class Parser:
     def __init__(self, dir='tmp'):
         self.dir = dir
+        self.retry = 1
         if self.dir and not os.path.isdir(self.dir):
             os.makedirs(self.dir)
 
@@ -80,8 +81,10 @@ class Parser:
             # print("end")
         else:
             print("http error %d" % response.status_code)
+            self.prase(http_url, type)
 
     def download(self, http_link):
+        self.retry = 1
         ext = os.path.splitext(http_link)[1]
         if ext == ".m3u8":
             session = requests.Session()
@@ -94,13 +97,11 @@ class Parser:
                 if body:
                     ts_list = [urllib.parse.urljoin(http_link, n.strip()) for n in body.split('\n') if
                                n and not n.startswith("#")]
-
                     if ts_list:
                         for k in ts_list:
                             self._download(k, self.dir)
             else:
                 print(r.status_code)
-
         else:
             self._download(http_link, self.dir)
 
@@ -108,16 +109,24 @@ class Parser:
         print(http_link)
         origin_name = os.path.split(http_link)[1]
         save_path = os.path.join(dst, origin_name)
+        if os.path.exists(save_path):
+            print(save_path + " exist.")
+            return
         try:
-            response = urllib.request.urlretrieve(url=http_link)
+            _http_link = http_link.encode(encoding='UTF-8', errors='strict')
+            response = urllib.request.urlretrieve(url=_http_link)
             contents = open(response[0], "br").read()
             with open(save_path, 'wb') as f:
                 f.write(contents)
                 f.close()
         except Exception as e:
             print('Network(%s) conditions is not good.Reloading.' % str(e))
-            self._download(http_link, dst)
-
+            if self.retry < 4:
+                self.retry += 1
+                self._download(http_link, dst)
+            else:
+                print("Retry %d times faild" % self.retry)
+                return
 
 if __name__ == '__main__':
     parse = Parser()
