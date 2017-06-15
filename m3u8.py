@@ -113,7 +113,7 @@ class Parser:
             print(save_path + " exist.")
             return
         try:
-            _http_link = http_link.encode(encoding='UTF-8', errors='strict')
+            _http_link = http_link
             response = urllib.request.urlretrieve(url=_http_link)
             contents = open(response[0], "br").read()
             with open(save_path, 'wb') as f:
