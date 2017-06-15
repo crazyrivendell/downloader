@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import requests
 import urllib.parse
 import urllib.request
+from urllib.parse import urlparse
 import os,json,shutil
 import time
 
@@ -113,9 +114,10 @@ class Parser:
             print(save_path + " exist.")
             return
         try:
-            _http_link = http_link
+            _http_link = urllib.parse.quote(http_link, safe=':/')
             response = urllib.request.urlretrieve(url=_http_link)
             contents = open(response[0], "br").read()
+
             with open(save_path, 'wb') as f:
                 f.write(contents)
                 f.close()
@@ -123,6 +125,8 @@ class Parser:
             print('Network(%s) conditions is not good.Reloading.' % str(e))
             if self.retry < 4:
                 self.retry += 1
+                if os.path.exists(save_path):
+                    os.remove(save_path)
                 self._download(http_link, dst)
             else:
                 print("Retry %d times faild" % self.retry)
