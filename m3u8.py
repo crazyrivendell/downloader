@@ -29,6 +29,7 @@ class Downloader:
 
     def run(self, m3u8_url, dir='tmp'):
         self.dir = dir
+        uri_list = []
         if self.dir and not os.path.isdir(self.dir):
             os.makedirs(self.dir)
 
@@ -36,14 +37,33 @@ class Downloader:
         if r.ok:
             body = r.content.decode("utf-8")
             if body:
-                ts_list = [urllib.parse.urljoin(m3u8_url, n.strip()) for n in body.split('\n') if n and not n.startswith("#")]
-                if ts_list:
-                    for k in ts_list:
-                        self.download(k, self.dir)
+                for n in body.split('\n'):
+                    if n and n.startswith("#EXT-X-MEDIA"):
+                        uri = n.split("URI=")
+                        _uri = uri[-1]
+                        uri_list.append(urllib.parse.urljoin(m3u8_url, _uri[1:-1].strip()))
+                if len(uri_list):
+                    for k in uri_list:
+                        response = self.session.get(k, timeout=10)
+                        if response.ok:
+                            body = response.content.decode("utf-8")
+                            if body:
+                                ts_list = [urllib.parse.urljoin(k, n.strip()) for n in body.split('\n') if n and not n.startswith("#")]
+                                if ts_list:
+                                    for j in ts_list:
+                                        self.download(j, self.dir)
+                else:
+                    ts_list = [urllib.parse.urljoin(m3u8_url, n.strip()) for n in body.split('\n') if
+                               n and not n.startswith("#")]
+                    if ts_list:
+                        for j in ts_list:
+                            self.download(j, self.dir)
+
         else:
             print(r.status_code)
 
     def download(self, url, path):
+        print(url)
         base_url, origin_name = os.path.split(url)
         save_path = os.path.join(path, origin_name)
         response = urllib.request.urlretrieve(url=url)
@@ -143,8 +163,9 @@ class Parser:
                 return
 
 if __name__ == '__main__':
-    parse = Parser()
-    parse.prase(http_url="https://api.kandaovr.com/video/v1/playlist?codec=4&container=H&language=ZH-CN&name=KANDAO_APP_MAIN&vbr=8&warping=C", type="VIDEO")
-    parse.prase(http_url="https://api.kandaovr.com/photo/v1/album?language=EN-US&name=KANDAO_APP_MAIN", type="PHOTO")
-    #downloader = Downloader(50)
-    #downloader.run('http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_16x9/gear5/prog_index.m3u8', '/home/wuminlai/Work/media/offset_hls/bipbop_16x9/gear5')
+    # parse = Parser()
+    # parse.prase(http_url="https://api.kandaovr.com/video/v1/playlist?codec=4&container=H&language=ZH-CN&name=KANDAO_APP_MAIN&vbr=8&warping=C", type="VIDEO")
+    # parse.prase(http_url="https://api.kandaovr.com/photo/v1/album?language=EN-US&name=KANDAO_APP_MAIN", type="PHOTO")
+    # parse.prase(http_url="https://api.kandaovr.com/photo/v1/album?language=EN-US&name=KANDAO_APP_MAIN", type="PHOTO")
+    downloader = Downloader(50)
+    downloader.run('http://v1.kandaovr.com/offcenter/H265/4M/Lamborghini1080p_3dv_offcenter.m3u8', 'tmp')
