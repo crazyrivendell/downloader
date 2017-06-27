@@ -38,7 +38,7 @@ class Downloader:
             body = r.content.decode("utf-8")
             if body:
                 for n in body.split('\n'):
-                    if n and n.startswith("#EXT-X-MEDIA"):
+                    if n and n.startswith("#EXT-X-MEDIA:"):
                         uri = n.split("URI=")
                         _uri = uri[-1]
                         uri_list.append(urllib.parse.urljoin(m3u8_url, _uri[1:-1].strip()))
@@ -129,10 +129,11 @@ class Parser:
                 body = r.content.decode("utf-8")
                 if body:
                     for n in body.split('\n'):
-                        if n and n.startswith("#EXT-X-MEDIA"):
+                        if n and n.startswith("#EXT-X-MEDIA:"):
                             uri = n.split("URI=")
-                            _uri = uri[-1]
-                            uri_list.append(urllib.parse.urljoin(http_link, _uri[1:-1].strip()))
+                            if len(uri):
+                                _uri = uri[-1]
+                                uri_list.append(urllib.parse.urljoin(http_link, _uri[1:-1].strip()))
                     if len(uri_list):
                         for k in uri_list:
                             response = session.get(k, timeout=10)
@@ -183,9 +184,10 @@ class Parser:
                 return
 
 if __name__ == '__main__':
-    # parse = Parser()
+    parse = Parser()
     # parse.prase(http_url="https://api.kandaovr.com/video/v1/playlist?codec=4&container=H&language=ZH-CN&name=KANDAO_APP_MAIN&vbr=8&warping=C", type="VIDEO")
+    parse.prase(http_url="https://cms-test.kandaovr.com/video/v1/playlist?codec=5&warping=O&container=H&vbr=4&name=KANDAO_APP_MAIN", type="VIDEO")
     # parse.prase(http_url="https://api.kandaovr.com/photo/v1/album?language=EN-US&name=KANDAO_APP_MAIN", type="PHOTO")
     # parse.prase(http_url="https://api.kandaovr.com/photo/v1/album?language=EN-US&name=KANDAO_APP_MAIN", type="PHOTO")
-    downloader = Downloader(50)
-    downloader.run('http://v1.kandaovr.com/offcenter/H265/4M/Lamborghini1080p_3dv_offcenter.m3u8', 'tmp')
+    # downloader = Downloader(50)
+    # downloader.run('http://v1.kandaovr.com/offcenter/H265/4M/Lamborghini1080p_3dv_offcenter.m3u8', 'tmp')
