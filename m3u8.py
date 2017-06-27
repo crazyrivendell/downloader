@@ -125,15 +125,35 @@ class Parser:
             session.mount('https://', adapter)
             r = session.get(http_link, timeout=10)
             if r.ok:
+                uri_list = []
                 body = r.content.decode("utf-8")
                 if body:
-                    ts_list = [urllib.parse.urljoin(http_link, n.strip()) for n in body.split('\n') if
-                               n and not n.startswith("#")]
-                    if ts_list:
-                        for k in ts_list:
-                            self._download(k, self.dir)
+                    for n in body.split('\n'):
+                        if n and n.startswith("#EXT-X-MEDIA"):
+                            uri = n.split("URI=")
+                            _uri = uri[-1]
+                            uri_list.append(urllib.parse.urljoin(http_link, _uri[1:-1].strip()))
+                    if len(uri_list):
+                        for k in uri_list:
+                            response = session.get(k, timeout=10)
+                            if response.ok:
+                                body = response.content.decode("utf-8")
+                                if body:
+                                    ts_list = [urllib.parse.urljoin(k, n.strip()) for n in body.split('\n') if
+                                               n and not n.startswith("#")]
+                                    if ts_list:
+                                        for j in ts_list:
+                                            self._download(j, self.dir)
+                            else:
+                                print("Parse %s failed %d" % (k, response.status_code))
+                    else:
+                        ts_list = [urllib.parse.urljoin(http_link, n.strip()) for n in body.split('\n') if
+                                   n and not n.startswith("#")]
+                        if ts_list:
+                            for j in ts_list:
+                                self._download(j, self.dir)
             else:
-                print(r.status_code)
+                print("Parse %s failed %d" % (http_link, r.status_code))
         else:
             self._download(http_link, self.dir)
 
