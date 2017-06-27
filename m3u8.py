@@ -136,17 +136,7 @@ class Parser:
                                 uri_list.append(urllib.parse.urljoin(http_link, _uri[1:-1].strip()))
                     if len(uri_list):
                         for k in uri_list:
-                            response = session.get(k, timeout=10)
-                            if response.ok:
-                                body = response.content.decode("utf-8")
-                                if body:
-                                    ts_list = [urllib.parse.urljoin(k, n.strip()) for n in body.split('\n') if
-                                               n and not n.startswith("#")]
-                                    if ts_list:
-                                        for j in ts_list:
-                                            self._download(j, self.dir)
-                            else:
-                                print("Parse %s failed %d" % (k, response.status_code))
+                            self.download(k)
                     else:
                         ts_list = [urllib.parse.urljoin(http_link, n.strip()) for n in body.split('\n') if
                                    n and not n.startswith("#")]
