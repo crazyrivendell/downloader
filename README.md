@@ -1,2 +1,2 @@
 # Downloader
-Download m3u8 to ts & jpg & mp4
+Download files from a http request(html,photo,videos(attention to m3u8/dash files))
